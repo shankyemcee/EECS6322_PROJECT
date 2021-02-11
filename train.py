@@ -29,7 +29,7 @@ if __name__ == "__main__":
     dataHandler = DataHandler()
     
 #load the gold references file of the model for training    
-    gold_train = dataHandler.get_gold_file(config['gold_train'])
+    gold_train = dataHandler.get_gold_file(config)
     
 
     # for epoch in range(int(config['epochs'])):

@@ -9,9 +9,22 @@ class DataHandler():
     def __init__(self):
        pass;
     
-    def get_gold_file(self,filename):
-        with open(filename) as f:
-                return json.load(f)
+    def get_gold_file(self,config):
+        if type(config['gold_train']) != str:
+            raise Exception("must provide filename of gold file in string format") 
+        elif config['gold_train'][-5:] != ".json": 
+            raise Exception("gold file must be a .json file") 
+        else:
+            with open(config['gold_train']) as f:
+                gold_file = json.load(f)
+        
+        
+        if len(gold_file) < int(config['batch_size']):
+            raise Exception("gold file must have atleast batch size no. of entries")
+        
+        
+        return gold_file
+    
     
     def get_train_embedding(self,gold_train,config,tokenizer):
 #sample batch size random entries from the gold file        
@@ -26,13 +39,16 @@ class DataHandler():
 #to convert them into numbers
 
         for entry in batch_list:
-            if int(config['stage']) == 1:
-                encoded_output = tokenizer.encode(entry[3])
-                encoded_output_list.append(encoded_output)
-                max_length = max(max_length , len(encoded_output))
-                mask_list.append(len(encoded_output)*[1])
-            elif int(config['stage']) == 2:
-                pass;
+            try:
+                if int(config['stage']) == 1:
+                    encoded_output = tokenizer.encode(entry[3])
+                    encoded_output_list.append(encoded_output)
+                    max_length = max(max_length , len(encoded_output))
+                    mask_list.append(len(encoded_output)*[1])
+                elif int(config['stage']) == 2:
+                    pass;
+            except IndexError:
+                raise Exception("Encountered incomplete entry: ",entry)
 
 # append eos token id at the end of longest encoding,
 # and pad all encodings with eos token id to match length of longest string
@@ -54,12 +70,14 @@ class DataHandler():
 #Append each title(i.e e[2]) with the table description(i.e e[4]) and encode
 #with the GPT2 tokenizer
         for entry in batch_list:
-            encoded_title = tokenizer.encode(entry[2])
-            encoded_table = tokenizer.encode(entry[4])
-            encoded_input_list.append(encoded_title + encoded_table)
-            encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]
-            max_length = max(max_length , len(encoded_input_list[-1]))
-            
+            try:
+                encoded_title = tokenizer.encode(entry[2])
+                encoded_table = tokenizer.encode(entry[4])
+                encoded_input_list.append(encoded_title + encoded_table)
+                encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]
+                max_length = max(max_length , len(encoded_input_list[-1]))
+            except IndexError:
+                raise Exception("Encountered incomplete entry: ",entry)    
         
 #Append eos tokens before each encoded input and pad using the eos tokens
 #to make all inputs of equal length       
