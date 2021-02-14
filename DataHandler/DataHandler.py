@@ -10,8 +10,10 @@ class DataHandler():
        pass;
     
     def get_gold_file(self,config):
-        if type(config['gold_train']) != str:
-            raise Exception("must provide filename of gold file in string format") 
+        if type(config) != dict:
+            raise TypeError("must provide config file as type dict") 
+        elif type(config['gold_train']) != str:
+            raise TypeError("must provide filename of gold file in string format") 
         elif config['gold_train'][-5:] != ".json": 
             raise Exception("gold file must be a .json file") 
         else:
@@ -48,7 +50,7 @@ class DataHandler():
                 elif int(config['stage']) == 2:
                     pass;
             except IndexError:
-                raise Exception("Encountered incomplete entry: ",entry)
+                raise IndexError("Encountered incomplete entry: ",entry)
 
 # append eos token id at the end of longest encoding,
 # and pad all encodings with eos token id to match length of longest string
@@ -77,7 +79,7 @@ class DataHandler():
                 encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]
                 max_length = max(max_length , len(encoded_input_list[-1]))
             except IndexError:
-                raise Exception("Encountered incomplete entry: ",entry)    
+                raise IndexError("Encountered incomplete entry: ",entry)    
         
 #Append eos tokens before each encoded input and pad using the eos tokens
 #to make all inputs of equal length       
