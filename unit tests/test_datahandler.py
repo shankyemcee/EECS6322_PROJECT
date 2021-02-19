@@ -7,7 +7,7 @@ import unittest
 from DataHandler.DataHandler import DataHandler
 from Configs.ConfigHandler import ConfigHandler
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import torch as tf
+import torch as th
 
 class TestDataHandler(unittest.TestCase):
     
@@ -42,9 +42,9 @@ class TestDataHandler(unittest.TestCase):
         gold_train = self.dataHandler.get_gold_file(config)
         batch_embedding = self.dataHandler.get_train_embedding(gold_train,config,tokenizer)
         tens1,tens2,tens3=batch_embedding
-        self.assertIsInstance(tens1, tf.Tensor)
-        self.assertIsInstance(tens2, tf.Tensor)
-        self.assertIsInstance(tens3, tf.Tensor)
+        self.assertIsInstance(tens1, th.Tensor)
+        self.assertIsInstance(tens2, th.Tensor)
+        self.assertIsInstance(tens3, th.Tensor)
 
 
 
