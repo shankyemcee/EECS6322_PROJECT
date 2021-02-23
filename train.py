@@ -34,11 +34,15 @@ if __name__ == "__main__":
     tokenizer.add_tokens(['[ENT]', '[SEP]'])
 
 #load the gpt2 model from transformers library
-
+    
     model = GPT2LMHeadModel.from_pretrained(config['model'])
 
 #resize the token embeddings since the model has two extra tokens added
     model.resize_token_embeddings(len(tokenizer))
+    
+    if config['stage'] == 2:
+            model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_checkpoint_file']))
+    
     device = th.device(config['device'])
 #load the model to the default gpu/cpu device specified in config    
     model.to(device)
@@ -83,7 +87,7 @@ if __name__ == "__main__":
             
             with writer.as_default():
                 tf.summary.scalar('loss', loss_tensor.tolist(), step=epoch)
-            
+        print("epoch: " + str(epoch) + "  loss: " + loss_tensor.tolist())    
         th.save(model.state_dict(), config['checkpoint_dir'] + 'C2F_stage{}_epoch{}.pt'.format(config['stage'], epoch))
 
     writer.close()

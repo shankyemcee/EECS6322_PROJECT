@@ -48,7 +48,13 @@ class DataHandler():
                     max_length = max(max_length , len(encoded_output))
                     mask_list.append(len(encoded_output)*[1])
                 elif int(config['stage']) == 2:
-                    pass;
+                    encoded_actual = tokenizer.encode(entry[0])
+                    encoded_sep = tokenizer.encode(' [SEP] ')
+                    encoded_template = tokenizer.encode(entry[3])
+                    encoded_output = encoded_actual + encoded_sep + encoded_template
+                    encoded_output_list.append(encoded_output)
+                    max_length = max(max_length , len(encoded_output))
+                    mask_list.append(len(encoded_output)*[1])
             except IndexError:
                 raise IndexError("Encountered incomplete entry: ",entry)
 
