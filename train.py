@@ -72,7 +72,14 @@ if __name__ == "__main__":
             
             optimizer.zero_grad()
             
+#the input tensor can sometimes be smaller than the output tensor 
+#or sometimes greater, but the model output will be of dimension equal
+#to the model input and should match the size of output tensor before
+#feeding to the softmax. Thus we concatenate and truncate by max sequence
+#length to prevent the size of the tensor going over the max length
             model_input = th.cat([input_tensor,output_tensor],1)
+            model_input = model_input[:,:int(config['max_length'])]
+
         # extract the predicted tensor and store in model_output
             model_output = model(model_input)[0]
             model_output = model_output[:,-output_tensor.shape[1]:,:].contiguous()
