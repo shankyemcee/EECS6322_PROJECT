@@ -15,7 +15,7 @@ import tensorflow as tf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", type=str, default='train_config.ini',
+    parser.add_argument("--config_file", type=str, default='config.ini',
                         help="the .ini file containing all the model and program settings")
     parser.add_argument("--section", type=str, default='DEFAULT',
                         help="the section of config file")
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     dataHandler = DataHandler()
     
 #load the gold references file of the model for training    
-    gold_train = dataHandler.get_gold_file(config)
+    gold_train = dataHandler.get_gold_train(config)
     
     loss_function = th.nn.CrossEntropyLoss(reduction='none')
 
@@ -97,6 +97,5 @@ if __name__ == "__main__":
         print("epoch: " + str(epoch) + "  loss: " + loss_tensor.tolist())    
         th.save(model.state_dict(), config['checkpoint_dir'] + 'C2F_stage{}_epoch{}.pt'.format(config['stage'], epoch))
 
-    writer.close()
-
-    
+    writer.close()       
+                

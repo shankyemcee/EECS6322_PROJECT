@@ -15,20 +15,20 @@ class TestDataHandler(unittest.TestCase):
     def setUpClass(self):
         self.dataHandler = DataHandler()
     
-    def test_getgoldfile(self):
-        # file = dataHandler.get_gold_file('aaa.ini')
+    def test_getgoldtrain(self):
+        # file = dataHandler.get_gold_train('aaa.ini')
         # self.assertEquals(file,25)
-        self.assertRaises(TypeError,self.dataHandler.get_gold_file,'aaa.ini')
+        self.assertRaises(TypeError,self.dataHandler.get_gold_train,'aaa.ini')
         config = {'gold_train':5}
-        self.assertRaises(TypeError,self.dataHandler.get_gold_file,config)
+        self.assertRaises(TypeError,self.dataHandler.get_gold_train,config)
         config = {'gold_train':'aaa.ini'}
-        self.assertRaises(Exception,self.dataHandler.get_gold_file,config)
+        self.assertRaises(Exception,self.dataHandler.get_gold_train,config)
         config = {'gold_train':'../data/train_lm_preprocessed.json',
                   'batch_size':100000}
-        self.assertRaises(Exception,self.dataHandler.get_gold_file,config)
+        self.assertRaises(Exception,self.dataHandler.get_gold_train,config)
         config = {'gold_train':'../data/train_lm_preprocessed.json',
                   'batch_size':6}
-        self.assertIsInstance(self.dataHandler.get_gold_file(config),list)
+        self.assertIsInstance(self.dataHandler.get_gold_train(config),list)
 
 
     def test_gettrainembedding(self):
@@ -39,7 +39,7 @@ class TestDataHandler(unittest.TestCase):
         gold_train = [[1,2,3,4],[5,6,7]]
         self.assertRaises(Exception,self.dataHandler.get_train_embedding,
                           gold_train,config,tokenizer)
-        gold_train = self.dataHandler.get_gold_file(config)
+        gold_train = self.dataHandler.get_gold_train(config)
         batch_embedding = self.dataHandler.get_train_embedding(gold_train,config,tokenizer)
         tens1,tens2,tens3=batch_embedding
         self.assertIsInstance(tens1, th.Tensor)
