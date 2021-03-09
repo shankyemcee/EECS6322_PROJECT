@@ -14,6 +14,7 @@ import tensorflow as tf
 
 
 if __name__ == "__main__":
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=str, default='config.ini',
                         help="the .ini file containing all the model and program settings")
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     config=ConfigHandler.get_configs(filename=args.config_file,section=args.section)
     print(config)
     
-    
+
     tokenizer = GPT2Tokenizer.from_pretrained(config['model'])
 
 #add these tokens to the dictionary otherwise model considers [ENT] as 
