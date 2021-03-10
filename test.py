@@ -7,10 +7,12 @@ from DataHandler.DataHandler import DataHandler
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import torch as th
 #from tensorboardX import SummaryWriter
-import datetime
-import tensorflow as tf
-
-
+# import datetime
+# import tensorflow as tf
+from NucleusSampling.NucleusSampling import top_k_top_p_filtering
+import torch.nn.functional as F
+import nltk
+import json
 
 
 if __name__ == "__main__":
@@ -39,8 +41,9 @@ if __name__ == "__main__":
 
 #resize the token embeddings since the model has two extra tokens added
     model.resize_token_embeddings(len(tokenizer))
-    
-    
+    model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_test_file']))
+
+                          
     device = th.device(config['device'])
 #load the model to the default gpu/cpu device specified in config    
     model.to(device)
@@ -52,48 +55,88 @@ if __name__ == "__main__":
 #load the gold references file of the model for training    
     gold_test = dataHandler.get_gold_test(config)
     
-    loss_function = th.nn.CrossEntropyLoss(reduction='none')
+    
+    sent_bleus_1 = []
+    sent_bleus_2 = []
+    sent_bleus_3 = []
 
-    optimizer = th.optim.Adam(model.parameters(), lr=float(config['learning_rate']))
-    
-    current_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    writer = tf.summary.create_file_writer(config['log_dir'] + current_time)
-    #writer.add_scalar('datetime of starting: ', current_time)
-    
-    for epoch in range(int(config['epochs'])):
-        for row in range(len(gold_train)):
-            inp,oup = dataHandler.get_test_embedding(gold_test,table_id,config,tokenizer)        
-            input_tensor, mask_tensor, output_tensor = batch_embedding
+    seq_list = {}
+    with th.no_grad():
+        for table_id in gold_test:
+            
+            input_tensor,output_tensor = dataHandler.get_test_embedding(gold_test,table_id,config,tokenizer)
             input_tensor = input_tensor.to(device)
-            mask_tensor = mask_tensor.to(device)
             output_tensor = output_tensor.to(device)
-            
-            optimizer.zero_grad()
-            
-#the input tensor can sometimes be smaller than the output tensor 
-#or sometimes greater, but the model output will be of dimension equal
-#to the model input and should match the size of output tensor before
-#feeding to the softmax. Thus we concatenate and truncate by max sequence
-#length to prevent the size of the tensor going over the max length
-            model_input = th.cat([input_tensor,output_tensor],1)
-            model_input = model_input[:,:int(config['max_length'])]
+            input_dim = input_tensor.shape[1]
+            seq_list[table_id] = []
 
-        # extract the predicted tensor and store in model_output
-            model_output = model(model_input)[0]
-            model_output = model_output[:,-output_tensor.shape[1]:,:].contiguous()
-            loss_tensor = loss_function(model_output.view(-1,model_output.shape[2]),output_tensor.view(-1))
             
-        #we multiply back the mask tensor to set all the extra pad tokens from the
-        #input and caption tensors to 0 so they do no contribute towards the loss    
-            loss_tensor = loss_tensor * mask_tensor.view(-1)
-            loss_tensor = loss_tensor.sum()/loss_tensor.shape[0]
-            loss_tensor.backward()
-            optimizer.step()
-            
-            with writer.as_default():
-                tf.summary.scalar('loss', loss_tensor.tolist(), step=epoch)
-        print("epoch: " + str(epoch) + "  loss: " + loss_tensor.tolist())    
-        th.save(model.state_dict(), config['checkpoint_dir'] + 'C2F_stage{}_epoch{}.pt'.format(config['stage'], epoch))
+            finished_template = [False for _ in range(len(input_tensor))]
+            finished_sentence = [False for _ in range(len(input_tensor))]
 
-    writer.close()       
+            for tok in range(int(config['max_decoding_length'])):
                 
+
+                model_output = model(input_tensor)[0]
+
+                
+                modeloutput_tail = model_output[:, -1, :]
+
+#apply nuclus filtering. This will set most components of each vector to -inf.    
+                filtered_tail = top_k_top_p_filtering(modeloutput_tail,
+                                                        top_k=int(config['top_k']),
+                                                        top_p=float(config['top_p']))
+    
+
+                predicted_tokens = th.multinomial(F.softmax(filtered_tail, dim=-1), num_samples=1)
+                
+
+                for token in range(len(predicted_tokens)):
+                    if predicted_tokens[token].item() == tokenizer.convert_tokens_to_ids('[SEP]'):
+                        finished_template[token] = True
+                    if predicted_tokens[token].item() == tokenizer.eos_token_id:
+                        finished_sentence[token] = True
+    
+                input_tensor = th.cat((input_tensor, predicted_tokens), dim=1)
+    
+                if all(finished_sentence):
+                    break;            
+            
+            predicted_tensor = input_tensor[:,input_dim:]
+   
+            
+            
+            for seq in predicted_tensor:
+                    decoded_seq = tokenizer.decode(seq, clean_up_tokenization_spaces=True)
+                    decoded_seq = decoded_seq[decoded_seq.find('[SEP]') + 6: decoded_seq.find(tokenizer.eos_token)].strip()
+                    seq_list[table_id].append(decoded_seq)
+
+            
+            references = dataHandler.get_references(gold_test[table_id])
+            #get references from the table entry and convert to list of lists
+            
+            for seq in seq_list[table_id]:
+                    
+                    seq = seq.lower().split()
+                    sent_bleus_1.append(nltk.translate.bleu_score.sentence_bleu(references, seq, weights=(1, 0, 0)))
+                    sent_bleus_2.append(nltk.translate.bleu_score.sentence_bleu( references, seq, weights=(0.5, 0.5, 0)))
+                    sent_bleus_3.append(nltk.translate.bleu_score.sentence_bleu(references, seq, weights=(0.33, 0.33, 0.33)))
+
+
+            bleu_1 = format((sum(sent_bleus_1) / len(sent_bleus_1) * 100), '.2f')
+            bleu_2 = format((sum(sent_bleus_2) / len(sent_bleus_2) * 100), '.2f')
+            bleu_3 = format((sum(sent_bleus_3) / len(sent_bleus_3) * 100), '.2f')
+    
+            print("table: {}, bleu-1: {}, bleu-2: {}, bleu-3: {}".format(table_id,bleu_1,bleu_2,bleu_3) )
+   
+
+    
+        print("total corpus BLEU score = {}/{}/{}".format(bleu_1, bleu_2, bleu_3))
+        
+        with open( config['test_output_dir'] + 'GPT_C2F_output.json', 'w') as f:
+            json.dump(seq_list, f)
+ 
+
+
+
+            

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     model.resize_token_embeddings(len(tokenizer))
     
     if config['stage'] == 2:
-            model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_checkpoint_file']))
+            model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_stage1_file']))
     
     device = th.device(config['device'])
 #load the model to the default gpu/cpu device specified in config    

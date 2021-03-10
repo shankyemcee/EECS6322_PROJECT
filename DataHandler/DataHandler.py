@@ -42,6 +42,13 @@ class DataHandler():
         
         return gold_file
     
+    def get_references(self,table_entries):
+        
+        ref_list = [entry[0].lower().split() for entry in table_entries]
+        
+        return ref_list
+        
+        
     
     def get_train_embedding(self,gold_train,config,tokenizer):
 #sample batch size random entries from the gold file        
