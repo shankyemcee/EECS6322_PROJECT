@@ -101,10 +101,18 @@ class DataHandler():
 #with the GPT2 tokenizer
         for entry in batch_list:
             try:
-                encoded_title = tokenizer.encode(entry[2])
-                encoded_table = tokenizer.encode(entry[4])
-                encoded_input_list.append(encoded_title + encoded_table)
-                encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]
+                tokenized_table = tokenizer.tokenize(entry[4])   
+                tokenized_title = tokenizer.tokenize(entry[2])
+                tab_n_title = tokenized_title + tokenized_table
+                tab_n_title = tab_n_title[:int(config['max_length'])-1] 
+                encoded_input_list.append(tokenizer.convert_tokens_to_ids(tab_n_title))
+                
+                
+                
+                # encoded_title = tokenizer.encode(entry[2])
+                # encoded_table = tokenizer.encode(entry[4])
+                # encoded_input_list.append(encoded_title + encoded_table)
+                # encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]
                 max_length = max(max_length , len(encoded_input_list[-1]))
             except IndexError:
                 raise IndexError("Encountered incomplete entry: ",entry)    
@@ -165,10 +173,10 @@ class DataHandler():
             for index, row in data.iterrows():
                 
                 try:    
-                    row_string += "In row " + str(index + 1) + " , "  
+                    row_string += " In row " + str(index + 1) + " , "  
                     col_string = ""
                     for linked_col in entry[1]:
-                        data_string = str(data.columns[3])
+                        data_string = str(data.columns[linked_col])
                         col_string += "the " + data_string + " is "
                         data_string = str(row[linked_col]).title()
                         col_string += data_string + " , " 
@@ -179,10 +187,18 @@ class DataHandler():
                 except IndexError:
                     raise IndexError("Encountered incomplete entry: ",entry)  
             
-            encoded_table = tokenizer.encode(row_string)   
-            encoded_title = tokenizer.encode(entry[2])
-            encoded_input_list.append(encoded_title + encoded_table)
-            encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]     
+            tokenized_table = tokenizer.tokenize(row_string)   
+            tokenized_title = tokenizer.tokenize(entry[2])
+            tab_n_title = tokenized_title + tokenized_table
+            # if len(tab_n_title) > 1024: print(table_id,len(tokenized_title + tokenized_table))
+            tab_n_title = tab_n_title[:int(config['max_length'])-1] 
+            encoded_input_list.append(tokenizer.convert_tokens_to_ids(tab_n_title))
+            # print(table_id,len(encoded_input_list[-1]))
+            # encoded_table = tokenizer.encode(row_string)   
+            # encoded_title = tokenizer.encode(entry[2])
+            # encoded_input_list.append(encoded_title + encoded_table)
+            # print(table_id,len(encoded_input_list[-1]))
+            # encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]     
             input_max_length = max(input_max_length , len(encoded_input_list[-1]))        
                     
                    

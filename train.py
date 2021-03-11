@@ -71,6 +71,7 @@ if __name__ == "__main__":
             mask_tensor = mask_tensor.to(device)
             output_tensor = output_tensor.to(device)
             
+
             optimizer.zero_grad()
             
 #the input tensor can sometimes be smaller than the output tensor 
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 #feeding to the softmax. Thus we concatenate and truncate by max sequence
 #length to prevent the size of the tensor going over the max length
             model_input = th.cat([input_tensor,output_tensor],1)
-            model_input = model_input[:,:int(config['max_length'])]
+            # model_input = model_input[:,:int(config['max_length'])]
 
         # extract the predicted tensor and store in model_output
             model_output = model(model_input)[0]

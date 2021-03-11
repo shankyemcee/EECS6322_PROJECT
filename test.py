@@ -15,6 +15,9 @@ import nltk
 import json
 
 
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=str, default='config.ini',
@@ -41,9 +44,10 @@ if __name__ == "__main__":
 
 #resize the token embeddings since the model has two extra tokens added
     model.resize_token_embeddings(len(tokenizer))
+
     model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_test_file']))
 
-                          
+                      
     device = th.device(config['device'])
 #load the model to the default gpu/cpu device specified in config    
     model.to(device)
@@ -63,14 +67,13 @@ if __name__ == "__main__":
     seq_list = {}
     with th.no_grad():
         for table_id in gold_test:
-            
             input_tensor,output_tensor = dataHandler.get_test_embedding(gold_test,table_id,config,tokenizer)
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
             input_dim = input_tensor.shape[1]
             seq_list[table_id] = []
 
-            
+
             finished_template = [False for _ in range(len(input_tensor))]
             finished_sentence = [False for _ in range(len(input_tensor))]
 
@@ -135,7 +138,7 @@ if __name__ == "__main__":
         
         with open( config['test_output_dir'] + 'GPT_C2F_output.json', 'w') as f:
             json.dump(seq_list, f)
- 
+
 
 
 
