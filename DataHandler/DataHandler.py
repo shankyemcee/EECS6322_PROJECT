@@ -102,7 +102,7 @@ class DataHandler():
         for entry in batch_list:
             try:
                 tokenized_table = tokenizer.tokenize(entry[4])   
-                tokenized_title = tokenizer.tokenize(entry[2])
+                tokenized_title = tokenizer.tokenize('Given the table title of "{}" . '.format(entry[2]))
                 tab_n_title = tokenized_title + tokenized_table
                 tab_n_title = tab_n_title[:int(config['max_length'])-1] 
                 encoded_input_list.append(tokenizer.convert_tokens_to_ids(tab_n_title))

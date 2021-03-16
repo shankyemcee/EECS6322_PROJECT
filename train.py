@@ -41,12 +41,21 @@ if __name__ == "__main__":
 #resize the token embeddings since the model has two extra tokens added
     model.resize_token_embeddings(len(tokenizer))
     
-    if config['stage'] == 2:
-            model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_stage1_file']))
     
     device = th.device(config['device'])
 #load the model to the default gpu/cpu device specified in config    
     model.to(device)
+    
+    
+    
+    loss_function = th.nn.CrossEntropyLoss(reduction='none', ignore_index=-1)
+    
+    
+    if int(config['stage']) == 2:
+            model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_stage1_file']))
+    
+    
+    
 # set the model to train mode    
     model.train()
     
@@ -55,7 +64,6 @@ if __name__ == "__main__":
 #load the gold references file of the model for training    
     gold_train = dataHandler.get_gold_train(config)
     
-    loss_function = th.nn.CrossEntropyLoss(reduction='none')
 
     optimizer = th.optim.Adam(model.parameters(), lr=float(config['learning_rate']))
     
@@ -71,7 +79,7 @@ if __name__ == "__main__":
             mask_tensor = mask_tensor.to(device)
             output_tensor = output_tensor.to(device)
             
-
+            model.zero_grad()
             optimizer.zero_grad()
             
 #the input tensor can sometimes be smaller than the output tensor 
@@ -79,24 +87,24 @@ if __name__ == "__main__":
 #to the model input and should match the size of output tensor before
 #feeding to the softmax. Thus we concatenate and truncate by max sequence
 #length to prevent the size of the tensor going over the max length
-            model_input = th.cat([input_tensor,output_tensor],1)
+            model_input = th.cat([input_tensor,output_tensor[:,:-1]],1)
             # model_input = model_input[:,:int(config['max_length'])]
 
         # extract the predicted tensor and store in model_output
             model_output = model(model_input)[0]
             model_output = model_output[:,-output_tensor.shape[1]:,:].contiguous()
-            loss_tensor = loss_function(model_output.view(-1,model_output.shape[2]),output_tensor.view(-1))
+            loss_tensor = loss_function(model_output.view(-1,model_output.shape[-1]),output_tensor.view(-1))
             
         #we multiply back the mask tensor to set all the extra pad tokens from the
         #input and caption tensors to 0 so they do no contribute towards the loss    
             loss_tensor = loss_tensor * mask_tensor.view(-1)
-            loss_tensor = loss_tensor.sum()/loss_tensor.shape[0]
+            loss_tensor = loss_tensor.sum()/ mask_tensor.sum() #take average of all relevant tokens excluding padded eos tokens
             loss_tensor.backward()
             optimizer.step()
             
             with writer.as_default():
                 tf.summary.scalar('loss', loss_tensor.tolist(), step=epoch)
-        print("epoch: " + str(epoch) + "  loss: " + loss_tensor.tolist())    
+        print("epoch: " + str(epoch) + "  loss: " + str(loss_tensor.tolist()))    
         th.save(model.state_dict(), config['checkpoint_dir'] + 'C2F_stage{}_epoch{}.pt'.format(config['stage'], epoch))
 
     writer.close()       
