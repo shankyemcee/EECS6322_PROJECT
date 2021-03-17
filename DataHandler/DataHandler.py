@@ -73,7 +73,7 @@ class DataHandler():
                     encoded_actual = tokenizer.encode(entry[0])
                     encoded_sep = tokenizer.encode(' [SEP] ')
                     encoded_template = tokenizer.encode(entry[3])
-                    encoded_output = encoded_actual + encoded_sep + encoded_template
+                    encoded_output = encoded_template + encoded_sep + encoded_actual
                     encoded_output_list.append(encoded_output)
                     max_length = max(max_length , len(encoded_output))
                     mask_list.append(len(encoded_output)*[1])
@@ -162,7 +162,7 @@ class DataHandler():
                     encoded_actual = tokenizer.encode(entry[0])
                     encoded_sep = tokenizer.encode(' [SEP] ')
                     encoded_template = tokenizer.encode(entry[3])
-                    encoded_output = encoded_actual + encoded_sep + encoded_template
+                    encoded_output = encoded_template + encoded_sep + encoded_actual
                     encoded_output_list.append(encoded_output)
                     output_max_length = max(output_max_length , len(encoded_output))
             except IndexError:
@@ -188,7 +188,7 @@ class DataHandler():
                     raise IndexError("Encountered incomplete entry: ",entry)  
             
             tokenized_table = tokenizer.tokenize(row_string)   
-            tokenized_title = tokenizer.tokenize(entry[2])
+            tokenized_title = tokenizer.tokenize('Given the table title of "{}" . '.format(entry[2]))
             tab_n_title = tokenized_title + tokenized_table
             # if len(tab_n_title) > 1024: print(table_id,len(tokenized_title + tokenized_table))
             tab_n_title = tab_n_title[:int(config['max_length'])-1] 
