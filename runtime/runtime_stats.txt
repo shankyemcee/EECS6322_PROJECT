@@ -1,0 +1,45 @@
+stage-1:
+Job ID: 63873559
+Cluster: cedar
+User/Group: shankar5/shankar5
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 17:07:35
+CPU Efficiency: 83.44% of 20:31:31 core-walltime
+Job Wall-clock time: 20:31:31
+Memory Utilized: 2.23 GB
+Memory Efficiency: 22.80% of 9.77 GB
+
+
+
+stage-2:
+Job ID: 63967452
+Cluster: cedar
+User/Group: shankar5/shankar5
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 14:45:45
+CPU Efficiency: 98.64% of 14:58:00 core-walltime
+Job Wall-clock time: 14:58:00
+Memory Utilized: 2.23 GB
+Memory Efficiency: 22.88% of 9.77 GB
+
+
+
+
+
+
+
+
+
+test:
+Job ID: 64026227
+Cluster: cedar
+User/Group: shankar5/shankar5
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 00:33:02
+CPU Efficiency: 90.54% of 00:36:29 core-walltime
+Job Wall-clock time: 00:36:29
+Memory Utilized: 2.16 GB
+Memory Efficiency: 44.32% of 4.88 GB
