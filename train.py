@@ -50,7 +50,7 @@ if __name__ == "__main__":
     
     loss_function = th.nn.CrossEntropyLoss(reduction='none', ignore_index=-1)
     
-    
+#load the saved model from checkpoints folder while doing stage 2 of training    
     if int(config['stage']) == 2:
             model.load_state_dict(th.load(config['checkpoint_dir'] + config['model_stage1_file']))
     
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     
 # set the model to train mode    
     model.train()
-    
+#load the data handler for creating embeddings of inputs    
     dataHandler = DataHandler()
     
 #load the gold references file of the model for training    
@@ -69,34 +69,36 @@ if __name__ == "__main__":
     
     current_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     writer = tf.summary.create_file_writer(config['log_dir'] + current_time)
-    #writer.add_scalar('datetime of starting: ', current_time)
+    
     
     for epoch in range(int(config['epochs'])):
         for row in range(len(gold_train)):
             batch_embedding = dataHandler.get_train_embedding(gold_train,config,tokenizer)        
             input_tensor, mask_tensor, output_tensor = batch_embedding
-            input_tensor = input_tensor.to(device)
+            input_tensor = input_tensor.to(device) #load tensors to the preferred device
             mask_tensor = mask_tensor.to(device)
             output_tensor = output_tensor.to(device)
-            
-            model.zero_grad()
+
+#Clear gradients in the model and optimizer at each round
+ #to prevent accumulation           
+            model.zero_grad() 
             optimizer.zero_grad()
             
 #the input tensor can sometimes be smaller than the output tensor 
 #or sometimes greater, but the model output will be of dimension equal
 #to the model input and should match the size of output tensor before
-#feeding to the softmax. Thus we concatenate and truncate by max sequence
-#length to prevent the size of the tensor going over the max length
+#feeding to the softmax. Thus we concatenate the output to the input
             model_input = th.cat([input_tensor,output_tensor[:,:-1]],1)
-            # model_input = model_input[:,:int(config['max_length'])]
+
 
         # extract the predicted tensor and store in model_output
             model_output = model(model_input)[0]
+#model ouput should match dimension of output tensor.
             model_output = model_output[:,-output_tensor.shape[1]:,:].contiguous()
             loss_tensor = loss_function(model_output.view(-1,model_output.shape[-1]),output_tensor.view(-1))
             
         #we multiply back the mask tensor to set all the extra pad tokens from the
-        #input and caption tensors to 0 so they do no contribute towards the loss    
+        #input tensor to 0 so they do no contribute towards the loss    
             loss_tensor = loss_tensor * mask_tensor.view(-1)
             loss_tensor = loss_tensor.sum()/ mask_tensor.sum() #take average of all relevant tokens excluding padded eos tokens
             loss_tensor.backward()

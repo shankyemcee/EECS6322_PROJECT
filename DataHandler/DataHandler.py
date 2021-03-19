@@ -43,8 +43,14 @@ class DataHandler():
         return gold_file
     
     def get_references(self,table_entries):
-        
-        ref_list = [entry[0].lower().split() for entry in table_entries]
+        if type(table_entries) != list:
+            raise TypeError("must provide table entries as type list")
+        if len(table_entries) == 0:
+            raise IndexError("must provide non empty list")
+        try:
+            ref_list = [entry[0].lower().split() for entry in table_entries]
+        except IndexError:
+                raise IndexError("Encountered incomplete entry")
         
         return ref_list
         
@@ -98,7 +104,8 @@ class DataHandler():
 
 
 #Append each title(i.e e[2]) with the table description(i.e e[4]) and encode
-#with the GPT2 tokenizer
+#with the GPT2 tokenizer. Must first tokenize and truncate the length before
+#converting to id's to avoid sequence length error
         for entry in batch_list:
             try:
                 tokenized_table = tokenizer.tokenize(entry[4])   
@@ -106,13 +113,6 @@ class DataHandler():
                 tab_n_title = tokenized_title + tokenized_table
                 tab_n_title = tab_n_title[:int(config['max_length'])-1] 
                 encoded_input_list.append(tokenizer.convert_tokens_to_ids(tab_n_title))
-                
-                
-                
-                # encoded_title = tokenizer.encode(entry[2])
-                # encoded_table = tokenizer.encode(entry[4])
-                # encoded_input_list.append(encoded_title + encoded_table)
-                # encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]
                 max_length = max(max_length , len(encoded_input_list[-1]))
             except IndexError:
                 raise IndexError("Encountered incomplete entry: ",entry)    
@@ -138,12 +138,8 @@ class DataHandler():
             
     def get_test_embedding(self,gold_test,table_id,config,tokenizer):
         
-        '''      
-       
-        with open("data/test_lm.json") as f:
-            gold_test = json.load(f)
-   
-        '''
+        if table_id not in gold_test:
+            raise IndexError("Table id does not exist")
         data = pd.read_csv(config['data_tables'] + table_id, '#')
 #each table entry has several references and each reference has the
 #original string, templated string, title and linked columns
@@ -153,9 +149,7 @@ class DataHandler():
         encoded_input_list = []
         output_max_length = 0
         input_max_length = 0
-# convert each templated string from ref_list to encoded form using 
-#GPT2 encoding. It will convert each token to a GPT2 token and use the vocabulary
-#to convert them into numbers
+
 
         for entry in ref_list:
             try:
@@ -169,6 +163,8 @@ class DataHandler():
                 raise IndexError("Encountered incomplete entry: ",entry)
             
             row_string = ""
+
+#create the input data string in the same format as training data
             
             for index, row in data.iterrows():
                 
@@ -187,25 +183,16 @@ class DataHandler():
                 except IndexError:
                     raise IndexError("Encountered incomplete entry: ",entry)  
             
-            tokenized_table = tokenizer.tokenize(row_string)   
-            tokenized_title = tokenizer.tokenize('Given the table title of "{}" . '.format(entry[2]))
-            tab_n_title = tokenized_title + tokenized_table
-            # if len(tab_n_title) > 1024: print(table_id,len(tokenized_title + tokenized_table))
-            tab_n_title = tab_n_title[:int(config['max_length'])-1] 
-            encoded_input_list.append(tokenizer.convert_tokens_to_ids(tab_n_title))
-            # print(table_id,len(encoded_input_list[-1]))
-            # encoded_table = tokenizer.encode(row_string)   
-            # encoded_title = tokenizer.encode(entry[2])
-            # encoded_input_list.append(encoded_title + encoded_table)
-            # print(table_id,len(encoded_input_list[-1]))
-            # encoded_input_list[-1] = encoded_input_list[-1][:int(config['max_length'])-1]     
-            input_max_length = max(input_max_length , len(encoded_input_list[-1]))        
-                    
-                   
-                    
-                
-            
-            
+            try:
+                tokenized_table = tokenizer.tokenize(row_string)   
+                tokenized_title = tokenizer.tokenize('Given the table title of "{}" . '.format(entry[2]))
+                tab_n_title = tokenized_title + tokenized_table
+                tab_n_title = tab_n_title[:int(config['max_length'])-1] 
+                encoded_input_list.append(tokenizer.convert_tokens_to_ids(tab_n_title))
+                input_max_length = max(input_max_length , len(encoded_input_list[-1]))        
+            except IndexError:
+                    raise IndexError("Encountered incomplete entry: ",entry)          
+
             
 # append eos token id at the end of longest encoding,
 # and pad all encodings with eos token id to match length of longest string

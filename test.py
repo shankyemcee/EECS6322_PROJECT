@@ -73,24 +73,31 @@ if __name__ == "__main__":
             input_dim = input_tensor.shape[1]
             seq_list[table_id] = []
 
-
+#These two lists are used to know when the required sequences are done
+#being extracted. finished_template is for knowing when the template
+#portion of model output is extracted indicated by predicting the [SEP] token.
+#finished_sentence is for knowing when the full sequence is extracted indicated
+#by the EOS token
             finished_template = [False for _ in range(len(input_tensor))]
             finished_sentence = [False for _ in range(len(input_tensor))]
 
+#If no EOS token is extracted, continue extraction for max_decoding length iterations
             for tok in range(int(config['max_decoding_length'])):
                 
 
                 model_output = model(input_tensor)[0]
 
-                
+#nucleus sampling proposed to use the tail of each sequence                 
                 modeloutput_tail = model_output[:, -1, :]
 
-#apply nuclus filtering. This will set most components of each vector to -inf.    
+#apply nucleus filtering. This will set most components of each vector to -inf.
+    
                 filtered_tail = top_k_top_p_filtering(modeloutput_tail,
                                                         top_k=int(config['top_k']),
                                                         top_p=float(config['top_p']))
     
-
+#compute softmax on the predicted tails. Since most components are set to -inf, they will get
+# a probability 0 and only a single token from the output corpus will be sampled for each sequence.
                 predicted_tokens = th.multinomial(F.softmax(filtered_tail, dim=-1), num_samples=1)
                 
 
@@ -104,7 +111,8 @@ if __name__ == "__main__":
     
                 if all(finished_sentence):
                     break;            
-            
+
+#extract the predicted portion of the input tensor            
             predicted_tensor = input_tensor[:,input_dim:]
    
             
