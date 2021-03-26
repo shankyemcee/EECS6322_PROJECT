@@ -43,3 +43,49 @@ CPU Efficiency: 90.54% of 00:36:29 core-walltime
 Job Wall-clock time: 00:36:29
 Memory Utilized: 2.16 GB
 Memory Efficiency: 44.32% of 4.88 GB
+
+
+stretch:
+
+
+stage-1:
+Job ID: 64254261
+Cluster: cedar
+User/Group: shankar5/shankar5
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 13:44:19
+CPU Efficiency: 98.56% of 13:56:23 core-walltime
+Job Wall-clock time: 13:56:23
+Memory Utilized: 2.90 GB
+Memory Efficiency: 7.43% of 39.06 GB
+
+
+
+
+stage-2:
+Job ID: 64332344
+Cluster: cedar
+User/Group: shankar5/shankar5
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 1-04:10:13
+CPU Efficiency: 98.51% of 1-04:35:45 core-walltime
+Job Wall-clock time: 1-04:35:45
+Memory Utilized: 2.91 GB
+Memory Efficiency: 7.46% of 39.06 GB
+
+
+test:
+Job ID: 64450853
+Cluster: cedar
+User/Group: shankar5/shankar5
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 00:56:39
+CPU Efficiency: 94.65% of 00:59:51 core-walltime
+Job Wall-clock time: 00:59:51
+Memory Utilized: 2.68 GB
+Memory Efficiency: 54.85% of 4.88 GB
+
+

@@ -99,3 +99,9 @@ Generated summaries will be the GPT_C2F_output.json file in the output folder sp
 ```
 test_output_dir = output/
 ```
+
+
+
+## Steps To Run Stretch Project
+
+Repeat steps 5-7 but replace train.py and test.py with train_stretch.py and test_stretch.py
